@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalkulyator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2b2d42 0%, #1d3557 100%);
+      font-family: Arial, sans-serif;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+
+    .copy-btn {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 12px 16px;
+      background: #06d6a0;
+      color: #051923;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: #04b98d;
+      transform: translateY(-1px);
+    }
+
+    .calculator {
+      background: #111827;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    }
+
+    .display {
+      background: #0f172a;
+      color: #7ef9c6;
+      font-size: 2.4rem;
+      min-height: 75px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 18px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      word-break: break-all;
+      border: 1px solid #243b53;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      font-size: 1.5rem;
+      padding: 18px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.15s ease;
+      color: white;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    .num {
+      background: #374151;
+      color: #f9fafb;
+    }
+
+    .num:hover {
+      background: #4b5563;
+      transform: scale(1.02);
+    }
+
+    .op {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .op:hover {
+      background: #2563eb;
+      transform: scale(1.02);
+    }
+
+    .equal {
+      background: #22c55e;
+      color: #06210d;
+      grid-column: span 2;
+    }
+
+    .equal:hover {
+      background: #16a34a;
+      transform: scale(1.02);
+    }
+
+    .clear {
+      background: #ef4444;
+      color: white;
+      grid-column: span 2;
+    }
+
+    .clear:hover {
+      background: #dc2626;
+      transform: scale(1.02);
+    }
+
+    .backspace {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .backspace:hover {
+      background: #d97706;
+      transform: scale(1.02);
+    }
+
+    @media (max-width: 480px) {
+      .wrap {
+        padding: 14px;
+      }
+      button {
+        font-size: 1.2rem;
+        padding: 16px 10px;
+      }
+      .display {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <button class="copy-btn" onclick="copyCode()">📋 COPY CODE</button>
+
+    <div class="calculator">
+      <div class="display" id="display">0</div>
+
+      <div class="buttons">
+        <button class="clear" onclick="clearAll()">C</button>
+        <button class="backspace" onclick="backspace()">⌫</button>
+        <button class="op" onclick="appendOperator('/')">÷</button>
+        <button class="op" onclick="appendOperator('*')">×</button>
+
+        <button class="num" onclick="appendNumber('7')">7</button>
+        <button class="num" onclick="appendNumber('8')">8</button>
+        <button class="num" onclick="appendNumber('9')">9</button>
+        <button class="op" onclick="appendOperator('-')">−</button>
+
+        <button class="num" onclick="appendNumber('4')">4</button>
+        <button class="num" onclick="appendNumber('5')">5</button>
+        <button class="num" onclick="appendNumber('6')">6</button>
+        <button class="op" onclick="appendOperator('+')">+</button>
+
+        <button class="num" onclick="appendNumber('1')">1</button>
+        <button class="num" onclick="appendNumber('2')">2</button>
+        <button class="num" onclick="appendNumber('3')">3</button>
+        <button class="op" onclick="appendDot()">,</button>
+
+        <button class="num" onclick="appendNumber('0')" style="grid-column: span 2;">0</button>
+        <button class="op" onclick="appendDot()">.</button>
+        <button class="equal" onclick="calculate()">=</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let display = document.getElementById("display");
+    let current = "0";
+    let firstValue = null;
+    let operator = null;
+    let waitingForSecondValue = false;
+
+    function updateDisplay() {
+      display.textContent = current;
+    }
+
+    function appendNumber(number) {
+      console.log("Raqam qo'shildi:", number);
+      
+      if (waitingForSecondValue) {
+        current = number;
+        waitingForSecondValue = false;
+      } else {
+        current = current === "0" ? number : current + number;
+      }
+      updateDisplay();
+    }
+
+    function appendOperator(op) {
+      console.log("Operator qo'shildi:", op);
+      
+      const inputValue = parseFloat(current);
+
+      if (firstValue === null) {
+        firstValue = inputValue;
+      } else if (operator) {
+        const result = calculateResult(firstValue, inputValue, operator);
+        current = String(result);
+        firstValue = result;
+      }
+
+      waitingForSecondValue = true;
+      operator = op;
+      updateDisplay();
+    }
+
+    function appendDot() {
+      console.log("Nuqta qo'shildi");
+      
+      if (waitingForSecondValue) {
+        current = "0.";
+        waitingForSecondValue = false;
+        updateDisplay();
+        return;
+      }
+
+      if (!current.includes(".")) {
+        current += ".";
+        updateDisplay();
+      }
+    }
+
+    function calculateResult(first, second, op) {
+      let result;
+      
+      switch (op) {
+        case "+":
+          result = first + second;
+          break;
+        case "-":
+          result = first - second;
+          break;
+        case "*":
+          result = first * second;
+          break;
+        case "/":
+          result = second === 0 ? "Xato" : first / second;
+          break;
+        default:
+          result = second;
+      }
+      
+      return result;
+    }
+
+    function calculate() {
+      console.log("Hisoblanadi:", firstValue, operator, current);
+      
+      if (!operator || firstValue === null) return;
+
+      const second = parseFloat(current);
+      const result = calculateResult(firstValue, second, operator);
+
+      current = String(result);
+      firstValue = null;
+      operator = null;
+      waitingForSecondValue = false;
+      updateDisplay();
+    }
+
+    function clearAll() {
+      console.log("Tozalandi");
+      
+      current = "0";
+      firstValue = null;
+      operator = null;
+      waitingForSecondValue = false;
+      updateDisplay();
+    }
+
+    function backspace() {
+      console.log("O'chirildi");
+      
+      if (current.length <= 1) {
+        current = "0";
+      } else {
+        current = current.slice(0, -1);
+      }
+      updateDisplay();
+    }
+
+    async function copyCode() {
+      try {
+        const text = document.documentElement.outerHTML;
+        await navigator.clipboard.writeText(text);
+        alert("✅ Kod nusxalandi!");
+      } catch (err) {
+        alert("❌ Nusxalash ishlamadi. Birozdan keyin urinib ko'ring.");
+      }
+    }
+
+    // BOSHLANG'ICH
+    updateDisplay();
+  </script>
+</body>
+</html>
